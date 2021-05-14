@@ -1,0 +1,10 @@
+public class AccountUtility {
+    public static void viewAnnualRevenue(){
+      List<Account> accountsList = [SELECT Name, AnnualRevenue FROM Account];
+        for (Account test : accountsList ){
+            String acctRev = 'Name: ' + test.Name + ', Annual Revenue: ' + test.AnnualRevenue;
+            System.debug(acctRev);            
+        }
+        
+    }
+}

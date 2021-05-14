@@ -1,0 +1,17 @@
+public class AccountHandler {
+    public static void insertAccount(Integer nAccount){
+        Integer n = 1;
+        List<Account> addAccounts = new List<Account>();
+        while(n <= nAccount){
+            Account store = new Account();
+            store.Name = 'Acme Inc' + n;
+            store.AccountNumber = 'A000' + n;
+            addAccounts.add(store);
+            System.debug(addAccounts);
+      
+            n++;
+            
+            insert addAccounts;
+        }      
+    }
+}

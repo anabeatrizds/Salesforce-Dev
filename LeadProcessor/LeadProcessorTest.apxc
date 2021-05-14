@@ -1,0 +1,20 @@
+@isTest
+private class LeadProcessorTest {
+    @isTest
+    private static void testBatchClass(){
+        //Load test data
+        List<Lead> leads = new List<Lead>();
+        for(Integer i=0; i<200;i++){ //inserir 200 registros no maximo
+            leads.add(new Lead(LastName='Connock', Company='Salesforce'));
+        }
+        insert leads;
+        //Perfofm the test
+        Test.startTest();
+        LeadProcessor lp = new LeadProcessor();
+        Id batchID = Database.executeBatch(lp, 200);
+        Test.stopTest();
+        //Check the result
+        List<Lead> updatedLeads = [SELECT Id FROM Lead Where LeadSource = 'Dreamforce'];
+        System.assertEquals(200, updatedLeads.size(), 'ERROR');
+    }
+}

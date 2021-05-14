@@ -1,0 +1,23 @@
+public class Tea {
+    public static void orderTea(){
+        /* //set - add types 
+         * Set<String> teaTypes = new Set <String>{'Black', 'White', 'Herbal'};
+        system.debug(teaTypes);
+        teaTypes.add('Green');
+        teaTypes.add('Black');
+        system.debug(teaTypes);*/
+        //new map - put - add sabor
+        Map<String, String> teaTypes = new Map <String, String>();
+        teaTypes.put('Black', 'Earthy');
+        teaTypes.put('White', 'Sweet');
+        teaTypes.put('Herbal', 'Sweet');
+        String flavor = teaTypes.get('Herbal');
+        System.debug('The flavor of Herbal is: ' + flavor);
+        //return flavor;
+        List <String> tea = new List<String>{'Black Tea', 'Green Tea', 'Chai Tea'};
+        for(String t : tea){
+        System.debug('We have ' + t);
+}
+    }
+
+}
