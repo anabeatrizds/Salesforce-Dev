@@ -1,0 +1,191 @@
+/* e necessario incluir dentro da classe apex.
+para incluir consultas no codigo apex, vc precisa atribuir o valor de devolucao a uma matriz de sObjects.*/
+Account[] accts = [SELECT Name,Phone FROM Account];
+
+// -------- exemplo
+// Add account and related contact
+Account acct = new Account(
+    Name='SFDC Computing',
+    Phone='(415)555-1212',
+    NumberOfEmployees=50,
+    BillingCity='San Francisco');
+insert acct;
+// Once the account is inserted, the sObject will be 
+// populated with an ID.
+// Get this ID.
+ID acctID = acct.ID;
+// Add a contact to this account.
+Contact con = new Contact(
+    FirstName='Carol',
+    LastName='Ruiz',
+    Phone='(415)555-1212',
+    Department='Wingo',
+    AccountId=acctID);
+insert con;
+// Add account with no contact
+Account acct2 = new Account(
+    Name='The SFDC Query Man',
+    Phone='(310)555-1213',
+    NumberOfEmployees=50,
+    BillingCity='Los Angeles',
+    Description='Expert in wing technologies.');
+insert acct2;
+
+
+//------- exemplo 2
+SELECT Name,Phone FROM Account
+
+
+//SINTAXE BASICA
+SELECT fields FROM ObjectName [WHERE Condition]
+
+//--- exemplo ----
+// seleciona contas e recebe campos nome e telefone de cada conta
+SELECT Name,Phone FROM Account
+
+
+//SELECT Name,Phone: Esta parte lista os campos que você gostaria de recuperar. Os campos são especificados após a palavra-chave SELECT em uma lista delimitada por vírgula. Ou você pode especificar apenas um campo, nesse caso nenhuma írgula é necessária (por exemplo).SELECT Phone
+//FROM Account: Esta peça especifica o objeto padrão ou personalizado que você deseja recuperar. Neste exemplo, é Conta. Para um objeto personalizado chamado Invoice_Statement, é Invoice_Statement__c.
+
+//VOCE NAO PODE especificar * para todos os campos que deseja obbter explicitamente
+//VOCE PRECISA colocar SELECT
+
+// WHERE limita as contas devolvidas que cumprem apenas a uma determinada condicao 
+
+
+//----- exemplo - recupera apenas as contas cujos nomes sao SFDC Computing
+SELECT Name,Phone FROM Account WHERE Name='SFDC Computing'
+
+//A cláusula WHERE pode conter múltiplas condições que são agrupadas usando operadores lógicos (AND, OR) e parênteses
+
+//----- exemplo - essa consulta retorna todas as contas cujo nome é SFDC Computing que tem mais de 25 funcionários
+
+SELECT Name,Phone FROM Account WHERE (Name='SFDC Computing' AND NumberOfEmployees>25)
+
+
+//----- exemplo - Esta consulta retorna todas as contas da SFDC Computing, ou todas as contas com mais de 25 funcionários cuja cidade de faturamento é Los Angeles.
+
+SELECT Name,Phone FROM Account WHERE (Name='SFDC Computing' OR (NumberOfEmployees>25 AND BillingCity='Los Angeles'))
+
+
+//ao inves de usar o operador = , use LIKE
+//Por exemplo, você pode recuperar todas as contas cujos nomes começam com SFDC usando esta condição: O personagem % curinga corresponde a qualquer ou nenhum personagem. O caractere _ em contraste pode ser usado para combinar com apenas um personagem.
+WHERE Name LIKE 'SFDC%'
+
+
+//você pode optar por classificar o registro retornado definido adicionando uma cláusula ORDER BY e especificando o campo pelo qual o conjunto de registros deve ser classificado.
+// ---- exemplo - classifica todas as contas recuperadas com base no campo Nome.
+
+SELECT Name,Phone FROM Account ORDER BY Name
+
+
+//A ordem de classificação padrão está em ordem alfabética, especificada como ASC. A declaração anterior é equivalente a:
+
+SELECT Name,Phone FROM Account ORDER BY Name ASC
+
+
+//Para reverter a ordem, use a palavra-chave DESC para ordem descendente:
+
+SELECT Name,Phone FROM Account ORDER BY Name DESC
+
+
+//Você pode limitar o número de registros devolvidos a um número arbitrário adicionando a cláusula onde n é o número de registros que você deseja retornar
+//é útil quando você não se importa com quais registros são devolvidos, mas você só quer trabalhar com um subconjunto de registros.
+
+//---- exemplo - essa consulta recupera a primeira conta que é devolvida. Observe que o valor devolvido é uma conta e não um array ao usar 
+Account oneAccountOnly = [SELECT Name,Phone FROM Account LIMIT 1];
+
+
+// combinar todas as clasulas opcionais em um consulta
+SELECT Name,Phone FROM Account 
+                   WHERE (Name = 'SFDC Computing' AND NumberOfEmployees>25)
+                   ORDER BY Name
+                   LIMIT 10
+
+
+
+Account[] accts = [SELECT Name,Phone FROM Account 
+                   WHERE (Name='SFDC Computing' AND NumberOfEmployees>25)
+                   ORDER BY Name
+                   LIMIT 10];
+System.debug(accts.size() + ' account(s) returned.');
+// Write all account array info
+System.debug(accts);
+
+
+//As instruções SOQL em Apex podem fazer referência a variáveis e expressões de código Apex se forem precedidas por um cólon (:). O uso de uma variável local dentro de uma instrução SOQL é chamado de bind.
+// ---- exemplo - Este exemplo mostra como usar a variável na cláusula WHERE.targetDepartment
+
+String targetDepartment = 'Wingo';
+Contact[] techContacts = [SELECT FirstName,LastName 
+                          FROM Contact WHERE Department=:targetDepartment];
+
+
+
+//os conjuntos podem ser ligados entre si atraves de relacionamentos de pesquisa ou de mestre-detalhes -- ex: o contato tem uma relacao de procuracao com a conta. 
+// quando vc cria ou atualiza um contato, vc pode associa-lo a uma conta.
+//para obter uma lista child relacianada a a um registro de parents, adicione uma conta interna para o registros da crianca
+// a clasula FROM da conjunta interva vai contra o nome de relacionamento
+
+//----- exemplo - contém uma consulta interna para obter todos os contatos associados a cada conta retornada. A cláusula FROM especifica a relação Contatos, que é uma relação padrão na Conta que vincula contas e contatos.
+
+SELECT Name, (SELECT LastName FROM Contacts) FROM Account WHERE Name = 'SFDC Computing'
+
+//---- exemplo - incorpora o exemplo de consulta SOQL no Apex e mostra como obter os registros de crianças do resultado SOQL usando o nome de relacionamento Contatos no sObject.
+
+Account[] acctsWithContacts = [SELECT Name, (SELECT FirstName,LastName FROM Contacts)
+                               FROM Account 
+                               WHERE Name = 'SFDC Computing'];
+// Get child records
+Contact[] cts = acctsWithContacts[0].Contacts;
+System.debug('Name of first associated contact: ' 
+             + cts[0].FirstName + ', ' + cts[0].LastName);
+
+
+
+//Você pode atravessar uma relação de um objeto infantil (contato) para um campo em seu pai (Account.Name) usando notação de ponto. Por exemplo, o seguinte apex snippet consulta registros de contato cujo primeiro nome é Carol e é capaz de recuperar o nome da conta associada de Carol atravessando a relação entre contas e contatos.
+
+Contact[] cts = [SELECT Account.Name FROM Contact 
+                 WHERE FirstName = 'Carol' AND LastName='Ruiz'];
+Contact carol = cts[0];
+String acctName = carol.Account.Name;
+System.debug('Carol\'s account name is ' + acctName);
+
+
+//Loop
+//Com um soql para loop, você pode incluir uma consulta SOQL dentro de um loop. Os resultados de uma consulta SOQL podem ser iterados dentro do loop. SOQL para loops usa um método diferente para recuperar registros — os registros são recuperados usando chunking eficiente com chamadas para a consulta e consultaMais métodos da API SOAP. Ao usar SOQL para loops, você pode evitar atingir o limite de tamanho da pilha.for
+
+//O SOQL dá loops de iterate sobre todos os registros sObject retornados por uma consulta SOQL. A sintaxe de um loop SOQL é:forfor
+for (variable : [soql_query]) {
+    code_block
+}
+
+//or 
+
+for (variable_list : [soql_query]) {
+    code_block
+}
+
+//Ambos e devem ser do mesmo tipo que os sObjects que são devolvidos pelo . variable variable_list soql_query
+
+//É preferível usar o formato de lista sObject do SOQL para loop, pois o loop é executado uma vez para cada lote de 200 sObjects. Isso permite que você trabalhe em lotes de registros e realize operações de DML em lote, o que ajuda a evitar atingir os limites do governador.
+
+insert new Account[]{new Account(Name = 'for loop 1'), 
+                     new Account(Name = 'for loop 2'), 
+                     new Account(Name = 'for loop 3')};
+// The sObject list format executes the for loop once per returned batch
+// of records
+Integer i=0;
+Integer j=0;
+for (Account[] tmp : [SELECT Id FROM Account WHERE Name LIKE 'for loop _']) {
+    j = tmp.size();
+    i++;
+}
+System.assertEquals(3, j); // The list should have contained the three accounts
+                       // named 'yyy'
+System.assertEquals(1, i); // Since a single batch can hold up to 200 records and,
+                       // only three records should have been returned, the 
+                       // loop should have executed only once
+
+
+

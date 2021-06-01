@@ -1,0 +1,7 @@
+public class LoopFor {
+    public static void LoopInfinito(){
+    for(Integer i = 0; i < 5; i++){
+        System.debug('The number is ' + i);
+    }
+    }
+}

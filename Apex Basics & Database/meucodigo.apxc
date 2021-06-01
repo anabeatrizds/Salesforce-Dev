@@ -1,0 +1,26 @@
+public class AccountHandler {
+    public static void insertNewAccount(String lista){
+        Contact newOne = new Contact(FirstName='', LastName='',Department='');
+        List<Contact> contacts = new List<Contact>{newOne};
+            upsert contacts;
+        // Bulk insert all contacts with one DML call
+        Database.SaveResult[] oneList = Database.insert(contacts, false);
+        //The method must also accept an empty string, catch the failed DML and then return null
+        // Iterate through each returned result
+        for (Database.SaveResult one : oneList) {
+             if (one.isSuccess()) {
+        // Operation was successful, so get the ID of the record that was processed
+                  System.debug('Successfully inserted contact. Contact ID: ' + one.getId());
+             } else {
+        // Operation failed, so get all errors
+        for(Database.Error err : one.getErrors()) {
+            System.debug('The following error has occurred.');
+            System.debug(err.getStatusCode() + ': ' + err.getMessage());
+            System.debug('Contact fields that affected this error: ' + err.getFields());
+	 }
+    }
+}
+    }
+}
+
+//ERA MAIS SIMPLES ==== FAAAILL

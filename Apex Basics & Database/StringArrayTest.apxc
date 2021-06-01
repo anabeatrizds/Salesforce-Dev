@@ -1,0 +1,20 @@
+public class StringArrayTest {
+    //class qith a methot that returns an array or list of formatted string ('test 0','test 1',...)
+    //the lenght of the array is determined by an integer parameter (Integer lenght)
+    // receive integer/return string
+    public static List<String> generateStringArray(Integer n){
+        //create a list String
+        List<String> myArray = new List<String>();
+        //accept an incoming integer as a parameter
+        for(Integer i=0; i<n; i++){
+            //return a string value in the format 'Test n'
+            myArray.add('Test ' + i);
+            
+            System.debug(myArray[i]);
+        }
+        //return array or list
+        return myArray;
+        //debug|annonimous window > StringArrayTest.generateStringArray(5);
+    }
+    }
+   

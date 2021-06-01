@@ -1,0 +1,35 @@
+//O Apex queueable fornece os seguintes benefícios para métodos futuros.
+
+//Tipos não primitivos - As classes podem aceitar variáveis de parâmetros de tipos de dados não primitivos, como sObjects ou tipos de Apex personalizados.
+//Monitoramento - Quando você envia seu trabalho, um jobId é devolvido que você pode usar para identificar o trabalho e monitorar seu progresso.
+//Empregos de encadeamento - Você pode acorrentar um trabalho para outro, começando um segundo emprego a partir de um trabalho em execução. A cadeia de empregos é útil para o processamento sequencial.
+//Então, como funciona? Ainda bem que perguntou.
+
+//Como o Queueable Apex inclui o melhor dos métodos futuros, é muito mais fácil de implementar do que o Batch Apex. Não tem as limitações que falamos. Para demonstrar como funciona, vamos pegar o código de amostra que usou um método futuro para fazer uma chamada web e implementá-lo usando o Queueable Apex.
+
+public class MyQueueableClass implements Queueable {
+    private List<Contact> contacts;
+    // Constructor for the class, where we pass
+    // in the list of contacts that we want to process
+    public MyQueueableClass(List<Contact> myContacts) {
+        contacts = myContacts;
+    }
+    public void execute(QueueableContext context) {
+        // Loop through the contacts passed in through
+        // the constructor and call a method
+        // which contains the code to do the actual callout
+        for (Contact con: contacts) {
+            String response = anotherClass.calloutMethod(con.Id,
+                    con.FirstName,
+                    con.LastName,
+                    con.Email);
+            // May still want to add some code here to log
+            // the response to a custom object
+        }
+    }
+}
+
+//To invoke Queueable Apex
+List<Contact> contacts = [SELECT Id, LastName, FirstName, Email
+    FROM Contact WHERE Is_Active__c = true];
+Id jobId = System.enqueueJob(new MyQueueableClass(contacts));

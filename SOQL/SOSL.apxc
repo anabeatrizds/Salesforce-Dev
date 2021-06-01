@@ -1,0 +1,107 @@
+
+NOTE - //object Search Language (SOSL) é um idioma de pesquisa salesforce que é usado para realizar pesquisas de texto em registros
+
+//Adicionar consultas SOSL ao Apex é simples — você pode incorporar consultas SOSL diretamente no código Apex. Quando o SOSL é incorporado no Apex, ele é referido como SOSL inline.
+
+//Este é um exemplo de consulta SOSL que busca contas e contatos que tenham quaisquer campos com a palavra 'SFDC'.
+
+List<List<SObject>> searchList = [FIND 'SFDC' IN ALL FIELDS 
+                                      RETURNING Account(Name), Contact(FirstName,LastName)];
+
+//o SOSL permite que você pesquise os registros da sua organização em busca de informações específicas. Ao contrário do SOQL, que só pode consultar um objeto padrão ou personalizado por vez, uma única consulta SOSL pode pesquisar todos os objetos.
+
+//SOSL corresponde aos campos com base em uma correspondência de palavras, enquanto o SOQL executa uma correspondência exata por padrão (quando não usa curingas)
+
+//Por exemplo, a busca por registros 'Digitais' no SOSL retorna registros cujos valores de campo são 'Digital' ou 'A Empresa Digital', mas o SOQL retorna apenas registros com valores de campo de 'Digital'.
+
+//SOQL e SOSL são duas línguas separadas com sintaxe diferente. Cada idioma tem um caso de uso distinto:
+
+//Use SOQL para recuperar registros de um único objeto.
+//Use SOSL para pesquisar campos em vários objetos. As consultas SOSL podem pesquisar a maioria dos campos de texto em um objeto.
+
+// Add account and related contact
+Account acct = new Account(
+    Name='SFDC Computing',
+    Phone='(415)555-1212',
+    NumberOfEmployees=50,
+    BillingCity='San Francisco');
+insert acct;
+// Once the account is inserted, the sObject will be 
+// populated with an ID.
+// Get this ID.
+ID acctID = acct.ID;
+// Add a contact to this account.
+Contact con = new Contact(
+    FirstName='Carol',
+    LastName='Ruiz',
+    Phone='(415)555-1212',
+    Department='Wingo',
+    AccountId=acctID);
+insert con;
+// Add account with no contact
+Account acct2 = new Account(
+    Name='The SFDC Query Man',
+    Phone='(310)555-1213',
+    NumberOfEmployees=50,
+    BillingCity='Los Angeles',
+    Description='Expert in wing technologies.');
+insert acct2;
+
+
+
+//A consulta SOSL retorna registros que possuem campos cujos valores correspondem ao Wingo. Com base em nossos dados amostrais, apenas um contato tem um campo com o valor Wingo, para que esse contato seja retornado..
+FIND {Wingo} IN ALL FIELDS RETURNING Account(Name), Contact(FirstName,LastName,Department)
+
+
+//A consulta de pesquisa no Editor de Consulta e na API deve ser incluída entre suportes cacheados ({Wingo}). Em contraste, no Apex a consulta de pesquisa está fechada em cotações únicas ('Wingo').
+
+//O SOSL permite especificar os seguintes critérios de pesquisa:
+//Expressão de texto (única palavra ou frase) para procurar
+//Escopo de campos para pesquisa
+//Lista de objetos e campos para recuperar
+//Condições para selecionar linhas nos objetos de origem
+
+FIND 'SearchQuery' [IN SearchGroup] [RETURNING ObjectsAndFields]
+
+//SearchQuery é o texto a ser procurado (uma única palavra ou uma frase). Os termos de pesquisa podem ser agrupados com operadores lógicos (AND, OR) e parênteses. Além disso, os termos de pesquisa podem incluir caracteres curinga (*, ?). O curinga * corresponde a zero ou mais caracteres no meio ou no final do termo de pesquisa. o? curinga corresponde a apenas um personagem no meio ou no final do termo de pesquisa.
+
+
+//SearchGroup é opcional. É o escopo dos campos para procurar. Se não for especificado, o escopo de pesquisa padrão é todos os campos. pode pegar um dos seguintes valores. SearchGroup
+
+//ALL FIELDS
+//NAME FIELDS
+//EMAIL FIELDS
+//PHONE FIELDS
+//SIDEBAR FIELDS
+
+//ObjectsAndFields é opcional. São as informações a serem devolvidas no resultado da pesquisa — uma lista de um ou mais sObjects e, dentro de cada sObject, lista de um ou mais campos, com valores opcionais para filtrar. Se não especificado, os resultados da pesquisa contêm as IDs de todos os objetos encontrados.
+
+//Palavra única— palavra única, como ou . As palavras são delimitadas por espaços, pontuação e mudanças de letras para dígitos (e vice-versa). Palavras são sempre insensíveis. testhelloSearchQuery
+//Frase— coleção de palavras e espaços cercados por citações duplas como . Várias palavras podem ser combinadas com operadores de lógica e agrupamento para formar uma consulta mais complexa."john smith"
+
+NOTE - //Exemplo de ápice sosl
+//Este exemplo mostra como executar uma consulta SOSL no Apex. Esta consulta SOSL combina dois termos de pesquisa usando o operador lógico OR — ele pesquisa wingo ou SFDC em qualquer campo. 
+
+//Este exemplo retorna todas as contas de amostra porque cada uma delas tem um campo contendo uma das palavras. Os resultados de pesquisa sosl são retornados em uma lista de listas. Cada lista contém uma matriz dos registros retornados. Neste caso, a lista tem dois elementos. No índice 0, a lista contém o conjunto de contas. No índice 1, a lista contém a matriz de contatos.
+
+List<List<sObject>> searchList = [FIND 'Wingo OR SFDC' IN ALL FIELDS 
+                   RETURNING Account(Name),Contact(FirstName,LastName,Department)];
+Account[] searchAccounts = (Account[])searchList[0];
+Contact[] searchContacts = (Contact[])searchList[1];
+System.debug('Found the following accounts.');
+for (Account a : searchAccounts) {
+    System.debug(a.Name);
+}
+System.debug('Found the following contacts.');
+for (Contact c : searchContacts) {
+    System.debug(c.LastName + ', ' + c.FirstName);
+}
+
+
+//Você pode filtrar, reordenar e limitar os resultados retornados de uma consulta SOSL. Como as consultas SOSL podem retornar vários sObjects, esses filtros são aplicados dentro de cada objeto sObject dentro da cláusula RETURNING.
+
+//Você pode filtrar os resultados do SOSL adicionando condições na cláusula WHERE para um objeto. Por exemplo, isso resulta apenas em contas cujo setor é Vestuário a ser devolvido: RETURNING Account(Name, Industry WHERE Industry='Apparel')
+
+//Da mesma forma, o pedido de resultados para um sObject é suportado adicionando ORDER BY para um objeto. Por exemplo, isso faz com que as contas devolvidas sejam encomendadas pelo campo Name: .RETURNING Account(Name, Industry ORDER BY Name)
+
+//O número de registros retornados pode ser limitado a um subconjunto de registros. Este exemplo limita as contas retornadas apenas para 10: RETURNING Account(Name, Industry LIMIT 10)

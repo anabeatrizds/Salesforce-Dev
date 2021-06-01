@@ -1,0 +1,84 @@
+//To publish event messages, you create an instance of the event and pass it to the EventBus.publish() method.
+//The following example creates one event of type Cloud_News__e, publishes it, and then checks whether the publishing was successful or encountered errors. The EventBus.publish() method returns a Database.SaveResult object, which contains the result of the publishing. If isSuccess() returns true, the publish request is queued in Salesforce and the event message is published asynchronously. If isSuccess() returns false, the event publish operation resulted in errors, which are returned in the Database.Error object. This method doesn’t throw an exception due to an unsuccessful publish operation.
+
+// Create an instance of the event and store it in the newsEvent variable
+Cloud_News__e newsEvent = new Cloud_News__e(
+           Location__c='Mountain City',
+           Urgent__c=true,
+           News_Content__c='Lake Road is closed due to mudslides.');
+// Call method to publish events
+Database.SaveResult sr = EventBus.publish(newsEvent);
+// Inspect publishing result
+if (sr.isSuccess()) {
+    System.debug('Successfully published event.');
+} else {
+    for(Database.Error err : sr.getErrors()) {
+        System.debug('Error returned: ' +
+                     err.getStatusCode() +
+                     ' - ' +
+                     err.getMessage());
+    }
+}
+
+//To publish more than one event in the same call, add your events to a list of events, and pass the list to the EventBus.publish() method. The output of this method is an array of Database.SaveResult objects: one for each published event. EventBus.publish() can publish some passed-in events, even when other events can’t be published due to errors. The EventBus.publish() method doesn’t throw exceptions caused by an unsuccessful publish operation. It is similar in behavior to the Apex Database.insert() method when called with the partial success option.
+
+// List to hold event objects to be published.
+List<Cloud_News__e> newsEventList = new List<Cloud_News__e>();
+// Create event objects.
+Cloud_News__e newsEvent1 = new Cloud_News__e(
+           Location__c='Mountain City',
+           Urgent__c=true,
+           News_Content__c='Lake Road is closed due to mudslides.');
+Cloud_News__e newsEvent2 = new Cloud_News__e(
+           Location__c='Mountain City',
+           Urgent__c=false,
+           News_Content__c='Small incident on Goat Lane causing traffic.');
+// Add event objects to the list.
+newsEventList.add(newsEvent1);
+newsEventList.add(newsEvent2);
+// Call method to publish events.
+List<Database.SaveResult> results = EventBus.publish(newsEventList);
+// Inspect publishing result for each event
+for (Database.SaveResult sr : results) {
+    if (sr.isSuccess()) {
+        System.debug('Successfully published event.');
+    } else {
+        for(Database.Error err : sr.getErrors()) {
+            System.debug('Error returned: ' +
+                        err.getStatusCode() +
+                        ' - ' +
+                        err.getMessage());
+        }
+    }
+}
+
+//The Salesforce platform provides allocations for how many events you can define in your org, and how many events you can publish in an hour. For events configured with the Publish After Commit behavior, each method execution is counted as one DML statement against the Apex DML statement limit. You can check limit usage using the Apex Limits.getDMLStatements() method. For events configured with the Publish Immediately behavior, each method execution is counted against a separate event publishing limit of 150 EventBus.publish() calls. You can check limit usage using the Apex Limits.getPublishImmediateDML() method. For more information see the Resources section. 
+
+//---Using salesforce api
+
+//External apps use an API to publish platform event messages. You publish events by creating records of your event in the same way that you insert sObjects. You can use Salesforce APIs to create platform event messages, such as SOAP API, REST API, or Bulk API. Like with Apex, the event message is published asynchronously. When you publish an event and get a success status of true, the publish request is queued in Salesforce.
+
+//For example, for the Cloud News event, you can publish event notifications by inserting Cloud_News__e records. The following example creates one event of type Cloud_News__e in REST API.
+
+//sObject REST endpoint:
+
+/services/data/v45.0/sobjects/Cloud_News__e/
+
+//Request body for a POST request:
+
+{
+   "Location__c" : "Mountain City",
+   "Urgent__c" : true,
+   "News_Content__c" : "Lake Road is closed due to mudslides."
+}
+
+//After the platform event message is created, the REST response looks like this output. Headers are deleted for brevity.
+
+HTTP/1.1 201 Created
+{
+   "id" : "e00xx000000000B",
+   "success" : true,
+   "errors" : [ ],
+   "warnings" : [ ]
+}
+
